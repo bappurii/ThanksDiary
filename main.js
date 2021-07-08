@@ -3,7 +3,7 @@ const url = require('url');
 const http = require('http');
 const qs = require('querystring');
 
-fs.readdir(`./What`, (err,dirName)=>{
+fs.readdir(`./What`,"utf8", (err,dirName)=>{
     
     let main_list='';
     dirName.forEach(element => {
@@ -13,32 +13,36 @@ fs.readdir(`./What`, (err,dirName)=>{
     http.createServer(function (req, res) {
         let _url = url.parse(req.url, true);
         let pathname =_url.pathname;
-        let current_category = pathname.split("/")[0];
         let queryData = url.parse(req.url, true).query;
 
         let sub_list="";
-        fs.readdir(`./What${pathname}`, (err,fileName)=>{
+        fs.readdir(`./What${pathname}`,"utf8", (err,fileName)=>{
             if(fileName){
                 fileName.forEach(element => {
-                sub_list=sub_list + `<ul><li><a href="${pathname}/?id=${element}">${element}</a></li></ul>`;
+                sub_list=sub_list + `<ul><li><a href="${pathname}?date=${element}">${element}</a></li></ul>`;
                 })
             };
             
            
-        fs.readFile(`./What${current_category}/${queryData.id}`,'utf8', (err, file) => {
-            
+        fs.readFile(`./What${pathname}/${queryData.date}`,'utf8', (err, file) => {
+            //>let onlyDate=queryData.date.slice[1];
+            //>console.log(queryData.date);
+            //>console.log(typeof queryData.date.slice(1));
             //sub_list & button
             if (pathname=="/") {
                 //content="Welcome!";
                 sub_list="";
                 button="";
-            } else if(queryData.id){
+            } else if(queryData.date){
                 //content=file;
+                
+                let datepath=queryData.date;
+                // console.log(datepath);
+                // let onlyDate=datepath.slice(1);
+                // console.log(onlyDate);
                 button=`
-                    <form action="new" method="post">
-                        <input type="submit" value="new">
-                    </form>
-                    <a href="${current_category}/${queryData.id}/amend">amend</a>
+                    <a href="${pathname}?process=new">new</a>
+                    <a href="${pathname}?date=${queryData.date}&process=amend">amend</a>
                     <form action="delete" method="post">
                         <input type="hidden" name="" value="">
                         <input type="submit" value="delete">
@@ -46,43 +50,46 @@ fs.readdir(`./What`, (err,dirName)=>{
                 `;
             } else{
                 button=`
-                    <form action="${current_category}/new" method="post">
-                        <input type="submit" value="new">
-                    </form> 
+                    <a href="${pathname}?process=new">new</a>
                 `;
             };
-
 
             //content
             let content;
             if (pathname =="/") {
                 content ="Welcome!"
 
-            } else if(pathname.includes("new")) {
+            } else if(queryData&&queryData.process=="new") {
                 content = `
-                <form action=${pathname}/new_process method="get">
-                    <p><input type="date" name="date"></p>
+                <form action=${pathname}?process=new_process method="get">
+                    <p><input type="date" name="new_date"></p>
                     <p><textarea name="new_content" placeholder="content"></textarea></p>
                     <input type="submit" >
                 </form>
                 `;
                 
-                let body;
+                let body="";
                 req.on('data', function (data) {
                     body += data;
-                    if (body.length > 1e6){
-                        req.connection.destroy();
-                    }
+                    // if (body.length > 1e6){
+                    //     req.connection.destroy();
+                    // }
+                    
                 });
-        
+                console.log(body);
                 req.on('end', function () {
                     var post = qs.parse(body);
-                    let date = post.date;
+                    console.log(JSON.parse(JSON.stringify(post)));
+                    let new_date = post.new_date;
                     let new_content= post.new_content;
-                    fs.writeFile(`${date}`, new_content);
+                    console.log(new_date);
+                    console.log(new_content);
+                    fs.writeFile(`${new_date}`, `${new_content}`,"utf8",(err)=>{
+                        
+                    });
                 });
 
-            } else if (pathname==`${current_category}/${queryData.id}/amend`){
+            } else if (pathname==`${pathname}?${queryData.date}&process=amend`){
                 content = `
                 <form>
                     <p><input type="date" name="date" placeholder="date"></p>
