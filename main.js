@@ -2,6 +2,7 @@ const fs = require('fs');
 const url = require('url');
 const http = require('http');
 const qs = require('querystring');
+const path=require('path')
 
 fs.readdir(`./What`,"utf8", (err,dirName)=>{
     
@@ -23,23 +24,15 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                 })
             };
             
-           
+
         fs.readFile(`./What${pathname}/${queryData.date}`,'utf8', (err, file) => {
-            //>let onlyDate=queryData.date.slice[1];
-            //>console.log(queryData.date);
-            //>console.log(typeof queryData.date.slice(1));
+
             //sub_list & button
             if (pathname=="/") {
                 //content="Welcome!";
                 sub_list="";
                 button="";
             } else if(queryData.date){
-                //content=file;
-                
-                let datepath=queryData.date;
-                // console.log(datepath);
-                // let onlyDate=datepath.slice(1);
-                // console.log(onlyDate);
                 button=`
                     <a href="${pathname}?process=new">new</a>
                     <a href="${pathname}?date=${queryData.date}&process=amend">amend</a>
@@ -61,12 +54,13 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
 
             } else if(queryData&&queryData.process=="new") {
                 content = `
-                <form action=${pathname}?process=new_process method="get">
+                <form action="${pathname}?process=new_process" method="post">
                     <p><input type="date" name="new_date"></p>
                     <p><textarea name="new_content" placeholder="content"></textarea></p>
                     <input type="submit" >
                 </form>
                 `;
+            } else if (queryData.process== "new_process"){
                 
                 let body="";
                 req.on('data', function (data) {
@@ -84,8 +78,7 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                     let new_content= post.new_content;
                     console.log(new_date);
                     console.log(new_content);
-                    fs.writeFile(`${new_date}`, `${new_content}`,"utf8",(err)=>{
-                        
+                    fs.writeFile(path.join(__dirname,`./What/${pathname}`,`${new_date}`), `${new_content}`,"utf8",(err)=>{
                     });
                 });
 
