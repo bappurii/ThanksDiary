@@ -29,17 +29,16 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
 
             //sub_list & button
             if (pathname=="/") {
-                //content="Welcome!";
                 sub_list="";
                 button="";
             } else if(queryData.date){
                 button=`
                     <a href="${pathname}?process=new">new</a>
                     <a href="${pathname}?date=${queryData.date}&process=amend">amend</a>
-                    <form action="delete" method="post">
-                        <input type="hidden" name="" value="">
+                    <form action="${pathname}?date=${queryData.date}&process=deleting" method="post">
                         <input type="submit" value="delete">
                     </form>
+
                 `;
             } else{
                 button=`
@@ -48,47 +47,73 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
             };
 
             //content
-            let content;
+            let content='';
             if (pathname =="/") {
-                content ="Welcome!"
-
-            } else if(queryData&&queryData.process=="new") {
+                content ="Welcome!";
+            } else if( !queryData.process){
+                if(file){
+                    content=file;
+                }
+            } else if(queryData.process=="new") {
                 content = `
-                <form action="${pathname}?process=new_process" method="post">
+                <form action="${pathname}?process=creating" method="post">
                     <p><input type="date" name="new_date"></p>
                     <p><textarea name="new_content" placeholder="content"></textarea></p>
                     <input type="submit" >
                 </form>
                 `;
-            } else if (queryData.process== "new_process"){
+            } else if(queryData.process== "creating"){
                 
                 let body="";
                 req.on('data', function (data) {
                     body += data;
-                    // if (body.length > 1e6){
-                    //     req.connection.destroy();
-                    // }
+                    if (body.length > 1e6){
+                        req.connection.destroy();
+                    }
                     
                 });
-                console.log(body);
+
                 req.on('end', function () {
                     var post = qs.parse(body);
-                    console.log(JSON.parse(JSON.stringify(post)));
                     let new_date = post.new_date;
                     let new_content= post.new_content;
-                    console.log(new_date);
-                    console.log(new_content);
-                    fs.writeFile(path.join(__dirname,`./What/${pathname}`,`${new_date}`), `${new_content}`,"utf8",(err)=>{
+                    fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
                     });
                 });
 
-            } else if (pathname==`${pathname}?${queryData.date}&process=amend`){
+            } else if(queryData.process=="amend"){
                 content = `
-                <form>
-                    <p><input type="date" name="date" placeholder="date"></p>
-                    <p><textarea name="content" </p>
+                <form action="${pathname}?process=amending" method="post">
+                    <p><input type="date" name="new_date" placeholder="date" value="${queryData.date}"></p>
+                    <p><textarea name="new_content">${file}</textarea></p>
+                    <input type="submit" value="submit">
                 </form>
                 `;
+            } else if(queryData.process=="amending"){
+                let body="";
+                req.on('data', function (data) {
+                    body += data;
+                    if (body.length > 1e6){
+                        req.connection.destroy();
+                    }
+                    
+                });
+                
+                req.on('end', function () {
+                    var post = qs.parse(body);
+                    let new_date = post.new_date;
+                    let new_content= post.new_content;
+                    fs.rename(`./What/${pathname}/${queryData.date}`, `./What/${pathname}/${new_date}`, (err)=>{
+                        fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
+                        });
+                    });
+                });
+
+                res.writeHead(302, {Location: `${pathname}?${queryData.date}`});
+                res.redirect
+            } else if (pathname.process="deleting"){
+                    fs.unlink(`./What/${pathname}/${queryData.date}`,(err)=>{});
+                    res.writeHead(302, {Location: `/${pathname}`});
             } else {
                 content = '';
             }
@@ -115,8 +140,9 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
             </body>
             </html>
             `;
-            
-            res.writeHead(200);
+            //res.writeHead(200);
+            if(pathname !=="creating","amending","deleting"){res.writeHead(200);}
+            //if(!res.statusCode){res.writeHead(200);}
             res.write(template);
             res.end();
             });
