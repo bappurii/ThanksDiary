@@ -3,7 +3,7 @@ const url = require('url');
 const http = require('http');
 const qs = require('querystring');
 const path=require('path')
-
+const sanitizeHtml = require('sanitize-html');
 
 
 fs.readdir(`./What`,"utf8", (err,dirName)=>{
@@ -72,9 +72,9 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                     </html>
                     `;
                 }
-                function normalRes(template){
+                function normalRes(main_list, sub_list, button, content){
                     res.writeHead(200);
-                    res.write(template);
+                    res.write(template(main_list, sub_list, button, content));
                     res.end();
                 }
                     
@@ -83,12 +83,12 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                 let content='';
                 if (pathname =="/") {
                     content ="Welcome!";
-                    normalRes(template(main_list, sub_list, button, content));
+                    normalRes(main_list, sub_list, button, content);
                 } else if( !queryData.process){
                     if(file){
                         content=file;
                     }
-                    normalRes(template(main_list, sub_list, button, content));
+                    normalRes(main_list, sub_list, button, content);
                 } else if(queryData.process=="new") {
                     content = `
                     <form action="${pathname}?process=creating" method="post">
@@ -97,7 +97,7 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                         <input type="submit" >
                     </form>
                     `;
-                    normalRes(template(main_list, sub_list, button, content));
+                    normalRes(main_list, sub_list, button, content);
                 } else if(queryData.process== "creating"){
                     
                     let body="";
@@ -115,7 +115,11 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                         let new_content= post.new_content;
                         fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
                         });
+                        res.writeHead(302, {Location: `${pathname}`});
+                        res.end(template(main_list, sub_list, button, content));
                     });
+
+                    
 
                 } else if(queryData.process=="amend"){
                     content = `
@@ -125,7 +129,7 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                         <input type="submit" value="submit">
                     </form>
                     `;
-                    normalRes(template(main_list, sub_list, button, content));
+                    normalRes(main_list, sub_list, button, content);
                 } else if(queryData.process=="amending"){
                     let body="";
                     req.on('data', function (data) {
@@ -158,7 +162,7 @@ fs.readdir(`./What`,"utf8", (err,dirName)=>{
                         
                 } else {
                     content = '';
-                    normalRes(template(main_list, sub_list, button, content));
+                    normalRes(main_list, sub_list, button, content);
                 }
 
                 
