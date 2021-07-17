@@ -4,6 +4,15 @@ const http = require('http');
 const qs = require('querystring');
 const path=require('path')
 const sanitizeHtml = require('sanitize-html');
+const mysql= require('mysql');
+const connection = mysql.createConnection({
+    host     : 'localhost',
+    user     : 'user',
+    password : 'qkqvnfl2',
+    database : 'diary'
+});
+connection.connect();
+
 
 
 fs.readdir(`./What`,"utf8", (err,dirName)=>{
