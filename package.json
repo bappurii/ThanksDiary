@@ -1,7 +1,6 @@
 {
   "name": "thanksdiary",
   "version": "1.0.0",
-  
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -18,6 +17,7 @@
   },
   "homepage": "https://github.com/bappurii/ThanksDiary#readme",
   "dependencies": {
+    "mysql": "^2.18.1",
     "sanitize-html": "^2.4.0"
   }
 }
