@@ -17,37 +17,37 @@ cn.connect();
 //ctg table
 
 cn.query('select * from ctg', 
-    function (error, results, fields) {
+    function (error, results) {
         if (error) throw error;
         let ctg_list='';
         for (let i=0; i<results.length; i++){
-            ctg_list = ctg_list + `<ul><li><a href="/${results[i].category}">${results[i].category}</a></li></ul>`;
+            ctg_list = ctg_list + `<ul><li><a href="/ctg${results[i].id
+            }">${results[i].category}</a></li></ul>`;
         }
+        console.log(ctg_list);
     }
 )
 
 
 
+    
+
+
 let server =http.createServer(function (req, res) {
     let pathname =url.parse(req.url, true).pathname;
     let queryData = url.parse(req.url, true).query;
-    
-    
+
     //date
-    
-    cn.query('select date_format(date, "%y-%m-%d") as date, content from ctg1', 
+    cn.query(`select date_format(date, "%y-%m-%d") as date, content from ${pathname.substring(1)}`, 
         function (error, results, fields) {
             if (error) throw error;
             
             let date='';
             for (let i=0; i<results.length; i++){
                 date=date + `<ul><li><a href="${pathname}?date=${results[i].date}">${results[i].date}</a></li></ul>`
-                
-            }
-
+            };
         }
     )
-    
 })
 server.listen(7000); 
 
