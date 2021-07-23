@@ -16,10 +16,6 @@ cn.connect();
 
 
 
-
-
-
-
 let server =http.createServer(function (req, res) {
     let pathname =url.parse(req.url, true).pathname;
     let queryData = url.parse(req.url, true).query;
@@ -31,7 +27,7 @@ let server =http.createServer(function (req, res) {
 
     
     //button
-    if (pathname=="/") {
+    if (pathname=="/" || pathname=="/create_ctg") {
         button="";
     } else if(queryData.id){
         button=`
@@ -62,7 +58,6 @@ let server =http.createServer(function (req, res) {
             }
         }
         
-
         
         //date
         let date = '';
@@ -88,6 +83,39 @@ let server =http.createServer(function (req, res) {
             if (pathname =="/") {
                 content ="Welcome!";
                 normalRes(ctg_list, date, button, content);
+            } else if(pathname == "/create_ctg"){
+                content = `
+                    <form action="/creating_ctg" method="post">
+                        <p><input type="text" name="new_category" placeholder="new category"></p>
+                        <input type="submit" >
+                    </form>
+                `;
+                normalRes(ctg_list, date, button, content);
+            }else if(pathname == "/creating_ctg"){
+                let body="";
+                req.on('data', function (data) {
+                    body += data;
+                    if (body.length > 1e6){
+                        req.cn.destroy();
+                    }
+                    
+                });
+
+                req.on('end', function () {
+                    
+                    const post = qs.parse(body);
+                    let new_category = post.new_category;
+
+                    
+                    cn.query(`insert into ctg (category) values ("${new_category}")`,function (err,results){
+                        if (err) throw err;
+                        cn.query(`select last_insert_id() as ctg_id from ctg`,function (err, results) {
+                            if (err) throw err;
+                            res.writeHead(302, {Location: `/ctg${results[0].ctg_id}`});
+                            res.end(tpl.template(ctg_list, date, button, content));
+                        });
+                    });
+                });
             } else if(queryData.id&&!queryData.process){
                 
                 cn.query(`select id, content from total where total.id=?`,[`${queryData.id}`],function (error, results) {
@@ -138,7 +166,8 @@ let server =http.createServer(function (req, res) {
                     //create
                     cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`,function (err,results){
                         if (err) throw err;
-                        cn.query(`select last_insert_id() as id from total`,function (error, results) {
+                        cn.query(`select last_insert_id() as id from total`,function (err, results) {
+                            if (err) throw err;
                             res.writeHead(302, {Location: `${pathname}?id=${results[0].id}`});
                             res.end(tpl.template(ctg_list, date, button, content));
                         });
@@ -201,154 +230,10 @@ let server =http.createServer(function (req, res) {
                 content = '';
                 normalRes(ctg_list, date, button, content);
             }
-
-            //test response
-
-            // res.write(
-            //     `<!DOCTYPE html>
-            //     <html>
-            //     <head>
-            //         <meta charset="UTF-8">
-            //         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-            //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            //         <title>PositiveDiary</title>
-            //     </head>
-            //     <body>
-            //         <h1><a href="/">Positive Diary</a></h1>
-            //         ${ctg_list}
-            //         ${date}
-            //     </body>
-            //     </html>
-            //     `
-            // )
-            // res.end();    
+   
             });
         }
     });
 });
 
 server.listen(7000); 
-
-
-
-
-
-//     let server =http.createServer(function (req, res) {
-        
-//         let pathname =url.parse(req.url, true).pathname;
-//         let queryData = url.parse(req.url, true).query;
-
-//         
-            
-
-//             fs.readFile(`./What${pathname}/${queryData.date}`,'utf8', (err, file) => {
-
-                
-//                 //date & button
-//                 
-
-//                 //content
-
-//                
-                    
-                
-
-//                 let content='';
-//                 if (pathname =="/") {
-//                     content ="Welcome!";
-//                     normalRes(ctg_list, date, button, content);
-//                 } else if( !queryData.process){
-//                     if(file){
-//                         content=file;
-//                     }
-//                     normalRes(ctg_list, date, button, content);
-//                 } else if(queryData.process=="create") {
-//                     content = `
-//                     <form action="${pathname}?process=creating" method="post">
-//                         <p><input type="date" name="new_date"></p>
-//                         <p><textarea name="new_content" placeholder="content"></textarea></p>
-//                         <input type="submit" >
-//                     </form>
-//                     `;
-//                     normalRes(ctg_list, date, button, content);
-//                 } else if(queryData.process== "creating"){
-                    
-//                     let body="";
-//                     req.on('data', function (data) {
-//                         body += data;
-//                         if (body.length > 1e6){
-//                             req.cn.destroy();
-//                         }
-                        
-//                     });
-
-//                     req.on('end', function () {
-//                         var post = qs.parse(body);
-//                         let new_date = post.new_date;
-//                         let new_content= post.new_content;
-//                         fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
-//                         });
-//                         res.writeHead(302, {Location: `${pathname}`});
-//                         res.end(tpl.tpl.template(ctg_list, date, button, content));
-//                     });
-
-                    
-
-//                 } else if(queryData.process=="amend"){
-//                     content = `
-//                     <form action="${pathname}?id=${queryData.id}&process=amending" method="post">
-//                         <p><input type="date" name="new_date" placeholder="date" value="${queryData.date}"></p>
-//                         <p><textarea name="new_content">${file}</textarea></p>
-//                         <input type="submit" value="submit">
-//                     </form>
-//                     `;
-//                     normalRes(ctg_list, date, button, content);
-//                 } else if(queryData.process=="amending"){
-//                     let body="";
-//                     req.on('data', function (data) {
-//                         body += data;
-//                         if (body.length > 1e6){
-//                             req.cn.destroy();
-//                         }
-                        
-//                     });
-                    
-//                     req.on('end', function () {
-//                         var post = qs.parse(body);
-//                         let new_date = post.new_date;
-//                         let new_content= post.new_content;
-//                         fs.rename(`./What/${pathname}/${queryData.date}`, `./What/${pathname}/${new_date}`, (err)=>{
-//                             fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
-//                                 // let a=`localhost:${server.address().port}${pathname}?date=${new_date}`
-//                                 res.writeHead(302, {Location: `${pathname}`});
-//                                 res.end(tpl.tpl.template(ctg_list, date, button, content));
-//                             });
-//                         });
-//                     });
-
-//                 } else if (pathname.process="deleting"){
-//     var answer = window.confirm("Save data?");
-// if (answer) {
-//     //some code
-// }
-// else {
-//     //some code
-// }
-//                         fs.unlink(`./What/${pathname}/${queryData.date}`,(err)=>{
-//                             // let a =`localhost:${server.address().port}${pathname}`
-//                             res.writeHead(302, {Location: `${pathname}`});
-//                             res.end(tpl.tpl.template(ctg_list, date, button, content));
-//                         });
-                        
-//                 } else {
-//                     content = '';
-//                     normalRes(ctg_list, date, button, content);
-//                 }
-
-                
-                
-//             });
-//         });
-//     });
-//     server.listen(7000);  
-// });
