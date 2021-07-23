@@ -67,7 +67,7 @@ let server =http.createServer(function (req, res) {
         //date
         let date = '';
         if (pathname !=="/"){
-            cn.query(`select id, ctg_id, date_format(total.date, "%y-%m-%d") as date, content from total where ctg_id=${parseInt(pathname.substring(4))}`, 
+            cn.query(`select id, ctg_id, date_format(total.date, "%y-%m-%d") as date, content from total where ctg_id=?`, [`${parseInt(pathname.substring(4))}`],
             function (error, results) {
                 if (error) throw error;
                 for (let i=0; i<results.length; i++){
@@ -90,7 +90,7 @@ let server =http.createServer(function (req, res) {
                 normalRes(ctg_list, date, button, content);
             } else if(queryData.id&&!queryData.process){
                 
-                cn.query(`select id, content from total where total.id=${queryData.id}`,function (error, results) {
+                cn.query(`select id, content from total where total.id=?`,[`${queryData.id}`],function (error, results) {
                     
                     if (error) throw error;
                     
@@ -124,7 +124,7 @@ let server =http.createServer(function (req, res) {
                     const post = qs.parse(body);
                     let new_date = post.new_date;
                     let new_content= post.new_content;
-                    
+
                     //space language change
                     while (new_content.includes("\r")||new_content.includes("\n")){
                         if(new_content.includes("\r\n")){
@@ -147,7 +147,8 @@ let server =http.createServer(function (req, res) {
 
             } else if(queryData.process=="amend"){
 
-                cn.query(`select id, date_format(total.date, "%Y-%m-%d") as date, content from total where total.id=${queryData.id}`,function (error, results) {
+                cn.query(`select id, date_format(total.date, "%Y-%m-%d") as date, content from total where total.id=?`, [`${queryData.id}`] 
+                    ,function (error, results) {
                     
                     if (error) throw error;
                     
@@ -185,16 +186,14 @@ let server =http.createServer(function (req, res) {
                         }
                     }
                     //update
-                    cn.query(`update total set date="${new_date}", content="${new_content}" where id=${parseInt(queryData.id)}`
-                    )
+                    cn.query(`update total set date="${new_date}", content="${new_content}" where id=?`,[`${parseInt(queryData.id)}`]);
                     
                     res.writeHead(302, {Location: `${pathname}?id=${queryData.id}`});
                     res.end(tpl.template(ctg_list, date, button, content));
                 });
             } else if (queryData.process=="deleting"){
-                    // content=parseInt(queryData.id)+typeof(parseInt(queryData.id));    
-                
-                    cn.query(`delete from total where total.id=${parseInt(queryData.id)}`);
+                    
+                    cn.query(`delete from total where total.id=?`,[`${parseInt(queryData.id)}`]);
                     res.writeHead(302, {Location: `${pathname}`});
                     res.end(tpl.template(ctg_list, date, button, content));
                 
