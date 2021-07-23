@@ -89,7 +89,7 @@ let server =http.createServer(function (req, res) {
             if (pathname =="/") {
                 content ="Welcome!";
                 normalRes(ctg_list, date, button, content);
-            } else if(queryData.id){
+            } else if(queryData.id&&!queryData.process){
                 
                 cn.query(`select id, content from total where total.id=${queryData.id}`,function (error, results) {
                     
@@ -122,40 +122,46 @@ let server =http.createServer(function (req, res) {
                     const post = qs.parse(body);
                     let new_date = post.new_date;
                     let new_content= post.new_content;
-                    cn.query(`insert into total (ctg_id, date, content) values (${pathname.substring(4)}, "${new_date}", "${new_content}")`)
+                    cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`)
                     res.writeHead(302, {Location: `${pathname}`});
                     res.end(tpl.template(ctg_list, date, button, content));
                 });
 
-        //     } else if(queryData.process=="amend"){
-        //         content = `
-        //         <form action="${pathname}?id=${queryData.id}&process=amending" method="post">
-        //             <p><input type="date" name="new_date" placeholder="date" value="${queryData.date}"></p>
-        //             <p><textarea name="new_content">${file}</textarea></p>
-        //             <input type="submit" value="submit">
-        //         </form>
-        //         `;
-        //         normalRes(ctg_list, date, button, content);
+            } else if(queryData.process=="amend"){
 
-        //     } else if(queryData.process=="amending"){
-        //         let body="";
-        //         req.on('data', function (data) {
-        //             body += data;
-        //             if (body.length > 1e6){
-        //                 req.cn.destroy();
-        //             }
-        //         });
+                cn.query(`select id, date_format(total.date, "%y-%m-%d") as date, content from total where total.id=${queryData.id}`,function (error, results) {
+                    
+                    if (error) throw error;
+                    
+                    content = `
+                    <form action="${pathname}?id=${queryData.id}&process=amending" method="post">
+                        <p><input type="date" name="new_date" placeholder="date" value="${results[0].date}"></p>
+                        <p><textarea name="new_content">${results[0].content}</textarea></p>
+                        <input type="submit" value="submit">
+                    </form>
+                    `;
+                    console.log(result[0].date);
+                    normalRes(ctg_list, date, button, content);
+                })
+
+            } else if(queryData.process=="amending"){
+                let body="";
+                req.on('data', function (data) {
+                    body += data;
+                    if (body.length > 1e6){
+                        req.cn.destroy();
+                    }
+                });
                 
-        //         req.on('end', function () {
-        //             const post = qs.parse(body);
-        //             let new_date = post.new_date;
-        //             let new_content= post.new_content;
-        //             cn.query(`update total set date="${new_date}", content="${new_content}" where id=${queryData.id}`
-
-        //             )
-        //             res.writeHead(302, {Location: `${pathname}`});
-        //             res.end(tpl.tpl.template(ctg_list, date, button, content));
-        //         });
+                req.on('end', function () {
+                    const post = qs.parse(body);
+                    let new_date = post.new_date;
+                    let new_content= post.new_content;
+                    cn.query(`update total set date="${new_date}", content="${new_content}" where id=${parseInt(queryData.id)}`
+                    )
+                    res.writeHead(302, {Location: `${pathname}`});
+                    res.end(tpl.tpl.template(ctg_list, date, button, content));
+                });
         //     } else if (pathname.process="deleting"){
         //         const answer = confirm("Are you sure to delete this?");
         //         if (answer) {
