@@ -124,7 +124,18 @@ let server =http.createServer(function (req, res) {
                     const post = qs.parse(body);
                     let new_date = post.new_date;
                     let new_content= post.new_content;
-
+                    
+                    //space language change
+                    while (new_content.includes("\r")||new_content.includes("\n")){
+                        if(new_content.includes("\r\n")){
+                            new_content=new_content.replace("\r\n","<br>");
+                        } else if(new_content.includes("\n")){
+                            new_content=new_content.replace("\n","<br>");
+                        } else{
+                            new_content=new_content.replace("\r","<br>");
+                        }
+                    }
+                    //create
                     cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`,function (err,results){
                         if (err) throw err;
                         cn.query(`select last_insert_id() as id from total`,function (error, results) {
@@ -163,11 +174,20 @@ let server =http.createServer(function (req, res) {
                     const post = qs.parse(body);
                     let new_date = post.new_date;
                     let new_content= post.new_content;
+                    //space language change
+                    while (new_content.includes("\r")||new_content.includes("\n")){
+                        if(new_content.includes("\r\n")){
+                            new_content=new_content.replace("\r\n","<br>");
+                        } else if(new_content.includes("\n")){
+                            new_content=new_content.replace("\n","<br>");
+                        } else{
+                            new_content=new_content.replace("\r","<br>");
+                        }
+                    }
+                    //update
                     cn.query(`update total set date="${new_date}", content="${new_content}" where id=${parseInt(queryData.id)}`
                     )
-                    // console.log(new_content);
-                    // let a= "\nnew_content".replaceAll("\n","<br>")
-                    // console.log(a);
+                    
                     res.writeHead(302, {Location: `${pathname}?id=${queryData.id}`});
                     res.end(tpl.template(ctg_list, date, button, content));
                 });
