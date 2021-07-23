@@ -3,7 +3,7 @@ const http = require('http');
 const qs = require('querystring');
 const mysql= require('mysql');
 const tpl = require('./lib/template');
-const { write } = require('fs');
+
 
 const cn = mysql.createConnection({
     host     : 'localhost',
@@ -48,20 +48,23 @@ let server =http.createServer(function (req, res) {
         `;
     };
 
+    
 
     //ctg table
+    
     cn.query('select * from ctg', 
     function (error, results) {
         if (error) throw error;
-        let ctg_list='';
-        for (let i=0; i<results.length; i++){
-            ctg_list = ctg_list + `<ul><li><a href="/ctg${results[i].id
-            }">${results[i].category}</a></li></ul>`;
+        let ctg_list ='';
+        if (results){
+            for (let i=0; i<results.length; i++){
+                ctg_list = ctg_list + `<ul><li><a href="/ctg${results[i].id
+                }">${results[i].category}</a></li></ul>`;
+            }
         }
+        
 
-        console.log(pathname.substring(4));
-        console.log(parseInt(pathname.substring(4)));
-
+        
         //date
         let date = '';
         if (pathname !=="/"){
@@ -73,46 +76,56 @@ let server =http.createServer(function (req, res) {
                 }
             
         
-        //     //content
-        //     let content='';
-        //     if (pathname =="/") {
-        //         content ="Welcome!";
-        //         tpl.normalRes(ctg_list, date, button, content);
-        //     } else if(queryData.id){
-        //         cn.query(`select content from total where id=${queryData.id}`,function (error, results, fields) {
-        //             if (error) throw error;
-        //             if (results[0].id){
-        //                 content=results[0].id;
-        //             }
-        //         })
-        //         tpl.normalRes(ctg_list, date, button, content);
-        //     } else if(queryData.process=="create") {
-        //         content = `
-        //         <form action="${pathname}?process=creating" method="post">
-        //             <p><input type="date" name="new_date"></p>
-        //             <p><textarea name="new_content" placeholder="content"></textarea></p>
-        //             <input type="submit" >
-        //         </form>
-        //         `;
-        //         tpl.normalRes(ctg_list, date, button, content);
-        //     } else if(queryData.process== "creating"){
-        //         let body="";
-        //         req.on('data', function (data) {
-        //             body += data;
-        //             if (body.length > 1e6){
-        //                 req.cn.destroy();
-        //             }
-                    
-        //         });
+            //content
 
-        //         req.on('end', function () {
-        //             const post = qs.parse(body);
-        //             let new_date = post.new_date;
-        //             let new_content= post.new_content;
-        //             cn.query(`insert into total (ctg_id, date, content) values (${pathname.substring(4)}, "${new_date}", "${new_content}")`)
-        //             res.writeHead(302, {Location: `${pathname}`});
-        //             res.end(tpl.template(ctg_list, date, button, content));
-        //         });
+            function normalRes (ctg_list, date, button, content){
+                res.writeHead(200);
+                res.write(tpl.template(ctg_list, date, button, content));
+                res.end();
+            }
+
+            
+            let content='';
+            if (pathname =="/") {
+                content ="Welcome!";
+                normalRes(ctg_list, date, button, content);
+            } else if(queryData.id){
+                
+                cn.query(`select id, content from total where total.id=${queryData.id}`,function (error, results) {
+                    
+                    if (error) throw error;
+                    
+                    content=results[0].content;
+                    normalRes(ctg_list, date, button, content);
+                })
+                
+            } else if(queryData.process=="create") {
+                content = `
+                <form action="${pathname}?process=creating" method="post">
+                    <p><input type="date" name="new_date"></p>
+                    <p><textarea name="new_content" placeholder="content"></textarea></p>
+                    <input type="submit" >
+                </form>
+                `;
+                normalRes(ctg_list, date, button, content);
+            } else if(queryData.process== "creating"){
+                let body="";
+                req.on('data', function (data) {
+                    body += data;
+                    if (body.length > 1e6){
+                        req.cn.destroy();
+                    }
+                    
+                });
+
+                req.on('end', function () {
+                    const post = qs.parse(body);
+                    let new_date = post.new_date;
+                    let new_content= post.new_content;
+                    cn.query(`insert into total (ctg_id, date, content) values (${pathname.substring(4)}, "${new_date}", "${new_content}")`)
+                    res.writeHead(302, {Location: `${pathname}`});
+                    res.end(tpl.template(ctg_list, date, button, content));
+                });
 
         //     } else if(queryData.process=="amend"){
         //         content = `
@@ -122,7 +135,7 @@ let server =http.createServer(function (req, res) {
         //             <input type="submit" value="submit">
         //         </form>
         //         `;
-        //         tpl.normalRes(ctg_list, date, button, content);
+        //         normalRes(ctg_list, date, button, content);
 
         //     } else if(queryData.process=="amending"){
         //         let body="";
@@ -141,40 +154,43 @@ let server =http.createServer(function (req, res) {
 
         //             )
         //             res.writeHead(302, {Location: `${pathname}`});
-        //             res.end(tpl.template(ctg_list, date, button, content));
+        //             res.end(tpl.tpl.template(ctg_list, date, button, content));
         //         });
         //     } else if (pathname.process="deleting"){
         //         const answer = confirm("Are you sure to delete this?");
         //         if (answer) {
         //             cn.query(`delete from total where id=queryData.id`);
         //             res.writeHead(302, {Location: `${pathname}`});
-        //             res.end(tpl.template(ctg_list, date, button, content));
+        //             res.end(tpl.tpl.template(ctg_list, date, button, content));
         //         } else {
         //             res.writeHead(200, {Location: `${pathname}/?id=${queryData.id}`});
-        //             res.end(tpl.template(ctg_list, date, button, content));
+        //             res.end(tpl.tpl.template(ctg_list, date, button, content));
         //         }
-        //     } else {
-        //         content = '';
-        //         tpl.normalRes(ctg_list, date, button, content);
-        //     }
-            res.write(
-                `<!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>PositiveDiary</title>
-                </head>
-                <body>
-                    <h1><a href="/">Positive Diary</a></h1>
-                    ${ctg_list}
-                    ${date}
-                </body>
-                </html>
-                `
-            )
-            res.end();    
+            } else {
+                content = '';
+                normalRes(ctg_list, date, button, content);
+            }
+
+            //test response
+
+            // res.write(
+            //     `<!DOCTYPE html>
+            //     <html>
+            //     <head>
+            //         <meta charset="UTF-8">
+            //         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            //         <title>PositiveDiary</title>
+            //     </head>
+            //     <body>
+            //         <h1><a href="/">Positive Diary</a></h1>
+            //         ${ctg_list}
+            //         ${date}
+            //     </body>
+            //     </html>
+            //     `
+            // )
+            // res.end();    
             });
         }
     });
@@ -209,12 +225,12 @@ server.listen(7000);
 //                 let content='';
 //                 if (pathname =="/") {
 //                     content ="Welcome!";
-//                     tpl.normalRes(ctg_list, date, button, content);
+//                     normalRes(ctg_list, date, button, content);
 //                 } else if( !queryData.process){
 //                     if(file){
 //                         content=file;
 //                     }
-//                     tpl.normalRes(ctg_list, date, button, content);
+//                     normalRes(ctg_list, date, button, content);
 //                 } else if(queryData.process=="create") {
 //                     content = `
 //                     <form action="${pathname}?process=creating" method="post">
@@ -223,7 +239,7 @@ server.listen(7000);
 //                         <input type="submit" >
 //                     </form>
 //                     `;
-//                     tpl.normalRes(ctg_list, date, button, content);
+//                     normalRes(ctg_list, date, button, content);
 //                 } else if(queryData.process== "creating"){
                     
 //                     let body="";
@@ -242,7 +258,7 @@ server.listen(7000);
 //                         fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
 //                         });
 //                         res.writeHead(302, {Location: `${pathname}`});
-//                         res.end(tpl.template(ctg_list, date, button, content));
+//                         res.end(tpl.tpl.template(ctg_list, date, button, content));
 //                     });
 
                     
@@ -255,7 +271,7 @@ server.listen(7000);
 //                         <input type="submit" value="submit">
 //                     </form>
 //                     `;
-//                     tpl.normalRes(ctg_list, date, button, content);
+//                     normalRes(ctg_list, date, button, content);
 //                 } else if(queryData.process=="amending"){
 //                     let body="";
 //                     req.on('data', function (data) {
@@ -274,7 +290,7 @@ server.listen(7000);
 //                             fs.writeFile(path.join(__dirname,`./What/${pathname}`,new_date), new_content,"utf8",(err)=>{
 //                                 // let a=`localhost:${server.address().port}${pathname}?date=${new_date}`
 //                                 res.writeHead(302, {Location: `${pathname}`});
-//                                 res.end(tpl.template(ctg_list, date, button, content));
+//                                 res.end(tpl.tpl.template(ctg_list, date, button, content));
 //                             });
 //                         });
 //                     });
@@ -290,12 +306,12 @@ server.listen(7000);
 //                         fs.unlink(`./What/${pathname}/${queryData.date}`,(err)=>{
 //                             // let a =`localhost:${server.address().port}${pathname}`
 //                             res.writeHead(302, {Location: `${pathname}`});
-//                             res.end(tpl.template(ctg_list, date, button, content));
+//                             res.end(tpl.tpl.template(ctg_list, date, button, content));
 //                         });
                         
 //                 } else {
 //                     content = '';
-//                     tpl.normalRes(ctg_list, date, button, content);
+//                     normalRes(ctg_list, date, button, content);
 //                 }
 
                 
