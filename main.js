@@ -4,7 +4,6 @@ const qs = require('querystring');
 const mysql= require('mysql');
 const tpl = require('./lib/template');
 
-
 const cn = mysql.createConnection({
     host     : 'localhost',
     user     : 'root',
@@ -120,9 +119,12 @@ let server =http.createServer(function (req, res) {
                 });
 
                 req.on('end', function () {
+                    
+                    
                     const post = qs.parse(body);
                     let new_date = post.new_date;
                     let new_content= post.new_content;
+
                     cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`,function (err,results){
                         if (err) throw err;
                         cn.query(`select last_insert_id() as id from total`,function (error, results) {
@@ -163,19 +165,19 @@ let server =http.createServer(function (req, res) {
                     let new_content= post.new_content;
                     cn.query(`update total set date="${new_date}", content="${new_content}" where id=${parseInt(queryData.id)}`
                     )
-                    res.writeHead(302, {Location: `${pathname}?id=${parseInt(queryData.id)}`});
+                    // console.log(new_content);
+                    // let a= "\nnew_content".replaceAll("\n","<br>")
+                    // console.log(a);
+                    res.writeHead(302, {Location: `${pathname}?id=${queryData.id}`});
                     res.end(tpl.template(ctg_list, date, button, content));
                 });
-        //     } else if (pathname.process="deleting"){
-        //         const answer = confirm("Are you sure to delete this?");
-        //         if (answer) {
-        //             cn.query(`delete from total where id=queryData.id`);
-        //             res.writeHead(302, {Location: `${pathname}`});
-        //             res.end(tpl.tpl.template(ctg_list, date, button, content));
-        //         } else {
-        //             res.writeHead(200, {Location: `${pathname}/?id=${queryData.id}`});
-        //             res.end(tpl.tpl.template(ctg_list, date, button, content));
-        //         }
+            } else if (queryData.process=="deleting"){
+                    // content=parseInt(queryData.id)+typeof(parseInt(queryData.id));    
+                
+                    cn.query(`delete from total where total.id=${parseInt(queryData.id)}`);
+                    res.writeHead(302, {Location: `${pathname}`});
+                    res.end(tpl.template(ctg_list, date, button, content));
+                
             } else {
                 content = '';
                 normalRes(ctg_list, date, button, content);
