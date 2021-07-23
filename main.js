@@ -100,9 +100,10 @@ let server =http.createServer(function (req, res) {
                 })
                 
             } else if(queryData.process=="create") {
+                let today = new Date().toISOString().slice(0, 10);
                 content = `
                 <form action="${pathname}?process=creating" method="post">
-                    <p><input type="date" name="new_date"></p>
+                    <p><input type="date" name="new_date" value="${today}"></p>
                     <p><textarea name="new_content" placeholder="content"></textarea></p>
                     <input type="submit" >
                 </form>
@@ -122,14 +123,18 @@ let server =http.createServer(function (req, res) {
                     const post = qs.parse(body);
                     let new_date = post.new_date;
                     let new_content= post.new_content;
-                    cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`)
-                    res.writeHead(302, {Location: `${pathname}`});
-                    res.end(tpl.template(ctg_list, date, button, content));
+                    cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`,function (err,results){
+                        if (err) throw err;
+                        cn.query(`select last_insert_id() as id from total`,function (error, results) {
+                            res.writeHead(302, {Location: `${pathname}?id=${results[0].id}`});
+                            res.end(tpl.template(ctg_list, date, button, content));
+                        });
+                    });
                 });
 
             } else if(queryData.process=="amend"){
 
-                cn.query(`select id, date_format(total.date, "%y-%m-%d") as date, content from total where total.id=${queryData.id}`,function (error, results) {
+                cn.query(`select id, date_format(total.date, "%Y-%m-%d") as date, content from total where total.id=${queryData.id}`,function (error, results) {
                     
                     if (error) throw error;
                     
@@ -140,7 +145,6 @@ let server =http.createServer(function (req, res) {
                         <input type="submit" value="submit">
                     </form>
                     `;
-                    console.log(result[0].date);
                     normalRes(ctg_list, date, button, content);
                 })
 
@@ -159,8 +163,8 @@ let server =http.createServer(function (req, res) {
                     let new_content= post.new_content;
                     cn.query(`update total set date="${new_date}", content="${new_content}" where id=${parseInt(queryData.id)}`
                     )
-                    res.writeHead(302, {Location: `${pathname}`});
-                    res.end(tpl.tpl.template(ctg_list, date, button, content));
+                    res.writeHead(302, {Location: `${pathname}?id=${parseInt(queryData.id)}`});
+                    res.end(tpl.template(ctg_list, date, button, content));
                 });
         //     } else if (pathname.process="deleting"){
         //         const answer = confirm("Are you sure to delete this?");
