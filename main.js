@@ -3,6 +3,7 @@ const http = require('http');
 const qs = require('querystring');
 const mysql= require('mysql');
 const tpl = require('./lib/template');
+const sanitizeHtml = require('sanitize-html');
 
 const cn = mysql.createConnection({
     host     : 'localhost',
@@ -163,13 +164,19 @@ let server =http.createServer(function (req, res) {
                             new_content=new_content.replace("\r","<br>");
                         }
                     }
+
+                    //sanitize HTML
+                    const clean_content = sanitizeHtml(content, {
+                        allowedTags: [ 'b', 'i', 'em', 'strong', 'a','br' ],
+                    });
+
                     //create
                     cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`,function (err,results){
                         if (err) throw err;
                         cn.query(`select last_insert_id() as id from total`,function (err, results) {
                             if (err) throw err;
                             res.writeHead(302, {Location: `${pathname}?id=${results[0].id}`});
-                            res.end(tpl.template(ctg_list, date, button, content));
+                            res.end(tpl.template(ctg_list, date, button, clean_content));
                         });
                     });
                 });
@@ -214,11 +221,16 @@ let server =http.createServer(function (req, res) {
                             new_content=new_content.replace("\r","<br>");
                         }
                     }
+                     //sanitize HTML
+                    const clean_content = sanitizeHtml(content, {
+                        allowedTags: [ 'b', 'i', 'em', 'strong', 'a','br' ],
+                    });
+
                     //update
                     cn.query(`update total set date="${new_date}", content="${new_content}" where id=?`,[`${parseInt(queryData.id)}`]);
                     
                     res.writeHead(302, {Location: `${pathname}?id=${queryData.id}`});
-                    res.end(tpl.template(ctg_list, date, button, content));
+                    res.end(tpl.template(ctg_list, date, button, clean_content));
                 });
             } else if (queryData.process=="deleting"){
                     
