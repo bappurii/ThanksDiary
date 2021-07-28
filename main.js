@@ -1,17 +1,19 @@
 const url = require('url');
 const http = require('http');
 const qs = require('querystring');
-const mysql= require('mysql');
-const tpl = require('./lib/template');
 const sanitizeHtml = require('sanitize-html');
 
-const cn = mysql.createConnection({
-    host     : 'localhost',
-    user     : 'root',
-    password : 'qkqvnfl2',
-    database : 'diary1'
-});
-cn.connect();
+const tpl = require('./lib/template');
+const cn=require('./lib/mysql')
+
+
+// const express = require('express');
+// const bodyParser = require('body-parser');
+
+// const app = express()
+
+// app.use(bodyParser.urlencoded({ extended: false }))
+
 
 
 
@@ -28,24 +30,9 @@ let server =http.createServer(function (req, res) {
 
     
     //button
-    if (pathname=="/" || pathname=="/create_ctg") {
-        button="";
-    } else if(queryData.id){
-        button=`
-            <a href="${pathname}?process=create">create</a>
-            <a href="${pathname}?id=${queryData.id}&process=amend">amend</a>
-            <form action="${pathname}?id=${queryData.id}&process=deleting" method="post">
-                <input type="submit" value="delete">
-            </form>
-        `;
-    } else{
-        button=`
-            <a href="${pathname}?process=create">create</a>
-        `;
-    };
-
+    let button= tpl.button(pathname,queryData);
     
-
+    
     //ctg table
     
     cn.query('select * from ctg', 
