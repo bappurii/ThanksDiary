@@ -15,6 +15,11 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 
 //Express
+
+app.get('/favicon.ico', function (req, res) {
+    res.writeHead(200, {'Content-Type': 'image/x-icon'} );
+    return res.end();
+})
 app.get('/', function (req, res) {
     
     let button = tpl.button(req);
@@ -25,7 +30,24 @@ app.get('/', function (req, res) {
         res.send(tpl.template(ctg_list, '',button, ''));
     });
 });
-
+app.get('/ctg/:ctg_id', function (req,res){
+    
+    let button = tpl.button(req);
+    console.log(button);
+    console.log(req.params.ctg_id);
+    cn.query('select * from ctg', 
+    function (error, ctg_results) {
+        if (error) throw error;
+        let ctg_list =tpl.ctg_list(ctg_results);
+        cn.query(`select id, ctg_id, date_format(total.date, "%y-%m-%d") as date, content from total where ctg_id=?`, [`${parseInt(req.params.ctg_id)}`],
+            function (error, total_result) {
+                if (error) throw error;
+                let date_list=tpl.date(total_result);
+                console.log(date_list);
+                res.send(tpl.template(ctg_list, date_list,button,''));
+        })
+    })
+});
 
 
 app.listen(7000);
