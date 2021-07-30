@@ -65,6 +65,109 @@ app.get('/ctg/:ctg_id/content/:content_id',function(req,res){
     })
 })
 
+app.get('/ctg/:ctg_id/cont_create',function(req,res){
+    let today = new Date().toISOString().slice(0, 10);
+    cn.query('select * from ctg', 
+    function (error, ctg_results) {
+        if (error) throw error;
+        let ctg_list =tpl.ctg_list(ctg_results);
+        content = `
+        <form action="/ctg/${req.params.ctg_id}/cont_creating" method="get">
+            <p><input type="date" name="new_date" value="${today}"></p>
+            <p><textarea name="new_content" placeholder="content"></textarea></p>
+            <input type="submit" >
+        </form>
+        `;
+        res.send(tpl.template(ctg_list, '', '', content));
+    });
+});
+
+app.post('/ctg/:ctg_id/cont_creating',function(req,res){
+    
+    let new_date = req.body.new_date;
+    let new_content= req.body.new_content;
+    
+    //space language change
+    while (new_content.includes("\r")||new_content.includes("\n")){
+        if(new_content.includes("\r\n")){
+            new_content=new_content.replace("\r\n","<br>");
+        } else if(new_content.includes("\n")){
+            new_content=new_content.replace("\n","<br>");
+        } else{
+            new_content=new_content.replace("\r","<br>");
+        }
+    }
+
+    //sanitize HTML
+    const clean_content = sanitizeHtml(new_content, {
+        allowedTags: [ 'b', 'i', 'em', 'strong', 'a','br' ],
+    });
+
+    //create
+    cn.query(`insert into total (ctg_id, date, content) values (${parseInt(req.params.ctg_id)}, "${new_date}", "${new_content}")`,function (err){
+        if (err) throw err;
+        cn.query(`select last_insert_id() as id from total`,function (err, results) {
+            if (err) throw err;
+            res.writeHead(302, {Location: `/ctg/${req.params.ctg_id}/content/${results[0].id}`});
+            res.end();
+        });
+    });
+});
+// else if(queryData.process=="create") {
+    //                 let today = new Date().toISOString().slice(0, 10);
+    //                 content = `
+    //                 <form action="${pathname}?process=creating" method="post">
+    //                     <p><input type="date" name="new_date" value="${today}"></p>
+    //                     <p><textarea name="new_content" placeholder="content"></textarea></p>
+    //                     <input type="submit" >
+    //                 </form>
+    //                 `;
+    //                 normalRes(ctg_list, date, button, content);
+    //             } else if(queryData.process== "creating"){
+    //                 let body="";
+    //                 req.on('data', function (data) {
+    //                     body += data;
+    //                     if (body.length > 1e6){
+    //                         req.cn.destroy();
+    //                     }
+                        
+    //                 });
+    
+    //                 req.on('end', function () {
+                        
+                        
+    //                     const post = qs.parse(body);
+    //                     let new_date = post.new_date;
+    //                     let new_content= post.new_content;
+    
+    //                     //space language change
+    //                     while (new_content.includes("\r")||new_content.includes("\n")){
+    //                         if(new_content.includes("\r\n")){
+    //                             new_content=new_content.replace("\r\n","<br>");
+    //                         } else if(new_content.includes("\n")){
+    //                             new_content=new_content.replace("\n","<br>");
+    //                         } else{
+    //                             new_content=new_content.replace("\r","<br>");
+    //                         }
+    //                     }
+    
+    //                     //sanitize HTML
+    //                     const clean_content = sanitizeHtml(content, {
+    //                         allowedTags: [ 'b', 'i', 'em', 'strong', 'a','br' ],
+    //                     });
+    
+    //                     //create
+    //                     cn.query(`insert into total (ctg_id, date, content) values (${parseInt(pathname.substring(4))}, "${new_date}", "${new_content}")`,function (err,results){
+    //                         if (err) throw err;
+    //                         cn.query(`select last_insert_id() as id from total`,function (err, results) {
+    //                             if (err) throw err;
+    //                             res.writeHead(302, {Location: `${pathname}?id=${results[0].id}`});
+    //                             res.end(tpl.template(ctg_list, date, button, clean_content));
+    //                         });
+    //                     });
+    //                 });
+    
+
 
 app.listen(7000);
 
