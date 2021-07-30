@@ -74,7 +74,7 @@ app.get('/ctg/:ctg_id/cont_create',function(req,res){
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
         content = `
-        <form action="/ctg/${req.params.ctg_id}/cont_creating" method="get">
+        <form action="/ctg/${req.params.ctg_id}/cont_creating" method="post">
             <p><input type="date" name="new_date" value="${today}"></p>
             <p><textarea name="new_content" placeholder="content"></textarea></p>
             <input type="submit" >
@@ -246,12 +246,23 @@ app.post('/ctg/:ctg_id/ctg_updating',function(req, res){
     });
 
     //ctg update
-    cn.query('update ctg set category=? where id=?',[`${new_category}`, `${req.params.ctg_id}`], function(err){
+    cn.query('update ctg set category=? where id=?',[`${clean_category}`, `${req.params.ctg_id}`], function(err){
         if (err) throw err;
         res.writeHead(302, {Location: `/ctg/${req.params.ctg_id}`});
         res.end();
     })    
 })
+
+
+app.post('/ctg/:ctg_id/ctg_deleting',function(req, res){
+    cn.query('delete from ctg where id=?',[`${req.params.ctg_id}`])
+    cn.query('delete from total where ctg_id=?',[`${req.params.ctg_id}`],function(err){
+        if (err) throw err;
+        res.writeHead(302, {Location: `/`});
+        res.end();
+    })
+})
+    
 
 
 app.listen(7000);
