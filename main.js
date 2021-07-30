@@ -14,7 +14,7 @@ const app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 
 
-//Express
+
 
 app.get('/favicon.ico', function (req, res) {
     res.writeHead(200, {'Content-Type': 'image/x-icon'} );
@@ -26,7 +26,7 @@ app.get('/', function (req, res) {
     function (error, ctg_results) {
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
-        res.send(tpl.template(ctg_list, '','', 'Hello!'));
+        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', '', 'Hello!'));
     });
 });
 app.get('/ctg/:ctg_id', function (req,res){
@@ -40,7 +40,7 @@ app.get('/ctg/:ctg_id', function (req,res){
             function (error, total_result) {
                 if (error) throw error;
                 let date_list=tpl.date(total_result);
-                res.send(tpl.template(ctg_list, date_list, button,''));
+                res.send(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button,''));
         })
     })
 });
@@ -59,7 +59,7 @@ app.get('/ctg/:ctg_id/content/:content_id',function(req,res){
                 cn.query(`select id, content from total where total.id=?`,[`${parseInt(req.params.content_id)}`],function (error, results) {
                     if (error) throw error;
                     content=results[0].content;
-                    res.send(tpl.template(ctg_list, date_list, button, content));
+                    res.send(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button, content));
                 });
         })
     })
@@ -80,7 +80,7 @@ app.get('/ctg/:ctg_id/cont_create',function(req,res){
             <input type="submit" >
         </form>
         `;
-        res.send(tpl.template(ctg_list, '', '', content));
+        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', content));
     });
 });
 
@@ -115,7 +115,7 @@ app.post('/ctg/:ctg_id/cont_creating',function(req,res){
         });
     });
 });
-app.get('/ctg/:ctg_id/content/:content_id/cont_amend',function(req,res){
+app.get('/ctg/:ctg_id/content/:content_id/cont_update',function(req, res){
     cn.query('select * from ctg', 
     function (error, ctg_results) {
         if (error) throw error;
@@ -126,17 +126,17 @@ app.get('/ctg/:ctg_id/content/:content_id/cont_amend',function(req,res){
         if (error) throw error;
         
         content = `
-        <form action="/ctg/${req.params.ctg_id}/content/${req.params.content_id}/cont_amending" method="post">
+        <form action="/ctg/${req.params.ctg_id}/content/${req.params.content_id}/cont_updating" method="post">
             <p><input type="date" name="new_date" placeholder="date" value="${results[0].date}"></p>
             <p><textarea name="new_content">${results[0].content}</textarea></p>
             <input type="submit" value="submit">
         </form>
         `;
-        res.send(tpl.template(ctg_list, '', '', content));
+        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', content));
         })
     })
 })
-app.post('/ctg/:ctg_id/content/:content_id/cont_amending',function(req,res){
+app.post('/ctg/:ctg_id/content/:content_id/cont_updating',function(req, res){
 
     let new_date = req.body.new_date;
     let new_content= req.body.new_content;
@@ -169,18 +169,18 @@ app.post('/ctg/:ctg_id/content/:content_id/cont_amending',function(req,res){
         function (error, total_result) {
             if (error) throw error;
             let date_list=tpl.date(total_result);
-            res.end(tpl.template(ctg_list, date_list, button, clean_content));
+            res.end(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button, clean_content));
         });
     });
 })
-app.post('/ctg/:ctg_id/content/:content_id/cont_deleting',function(req,res){
+app.post('/ctg/:ctg_id/content/:content_id/cont_deleting',function(req, res){
     cn.query(`delete from total where total.id=?`,[`${parseInt(req.params.content_id)}`]);
     res.writeHead(302, {Location: `/ctg/${req.params.ctg_id}`});
     res.end();
 })
 
 
-//ctg
+//ctg CUD
 app.get('/ctg_create', function(req,res){
     content = `
         <form action="/ctg_creating" method="post">
@@ -192,7 +192,7 @@ app.get('/ctg_create', function(req,res){
     function (error, ctg_results) {
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
-        res.send(tpl.template(ctg_list, '', '', content));
+        res.send(tpl.template(ctg_list, '', '', '', content));
     })
 })
 
@@ -207,10 +207,50 @@ app.post('/ctg_creating', function(req,res){
                 let button = tpl.button(req);
                 if (error) throw error;
                 let ctg_list =tpl.ctg_list(ctg_results);
-                res.send(tpl.template(ctg_list, '', button, ''));
+                res.send(tpl.template(ctg_list, '', '', button, ''));
             })
         });
     });
+})
+
+
+app.get('/ctg/:ctg_id/ctg_update',function(req, res){
+    cn.query(`select * from ctg where id=?`,[`${req.params.ctg_id}`],function(err, results){
+        if(err) throw err;
+        content = `
+        <form action="/ctg/${req.params.ctg_id}/ctg_updating" method="post">
+            <p>
+                
+                <input type="text" name="new_category" value="${results[0].category}">
+            </p>
+            <input type="submit" >
+        </form>
+        `;
+        cn.query('select * from ctg', 
+        function (error, ctg_results) {
+            if (error) throw error;
+            let ctg_list =tpl.ctg_list(ctg_results);
+            res.end(tpl.template(ctg_list, '', '', '', content));
+        })
+    })
+})
+
+app.post('/ctg/:ctg_id/ctg_updating',function(req, res){
+    
+
+    let new_category = req.body.new_category;
+
+    //sanitize HTML
+    const clean_category = sanitizeHtml(new_category, {
+        allowedTags: [ 'b', 'i', 'em', 'strong', 'a','br' ],
+    });
+
+    //ctg update
+    cn.query('update ctg set category=? where id=?',[`${new_category}`, `${req.params.ctg_id}`], function(err){
+        if (err) throw err;
+        res.writeHead(302, {Location: `/ctg/${req.params.ctg_id}`});
+        res.end();
+    })    
 })
 
 
