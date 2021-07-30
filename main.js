@@ -22,12 +22,11 @@ app.get('/favicon.ico', function (req, res) {
 })
 app.get('/', function (req, res) {
     
-    let button = tpl.button(req);
     cn.query('select * from ctg', 
     function (error, ctg_results) {
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
-        res.send(tpl.template(ctg_list, '',button, 'Hello!'));
+        res.send(tpl.template(ctg_list, '','', 'Hello!'));
     });
 });
 app.get('/ctg/:ctg_id', function (req,res){
@@ -46,6 +45,7 @@ app.get('/ctg/:ctg_id', function (req,res){
     })
 });
 
+//content read
 app.get('/ctg/:ctg_id/content/:content_id',function(req,res){
     let button = tpl.button(req);
     cn.query('select * from ctg', 
@@ -65,6 +65,8 @@ app.get('/ctg/:ctg_id/content/:content_id',function(req,res){
     })
 })
 
+
+//content CUD
 app.get('/ctg/:ctg_id/cont_create',function(req,res){
     let today = new Date().toISOString().slice(0, 10);
     cn.query('select * from ctg', 
@@ -176,6 +178,42 @@ app.post('/ctg/:ctg_id/content/:content_id/cont_deleting',function(req,res){
     res.writeHead(302, {Location: `/ctg/${req.params.ctg_id}`});
     res.end();
 })
+
+
+//ctg
+app.get('/ctg_create', function(req,res){
+    content = `
+        <form action="/ctg_creating" method="post">
+            <p><input type="text" name="new_category" placeholder="new category"></p>
+            <input type="submit" >
+        </form>
+        `;
+    cn.query('select * from ctg', 
+    function (error, ctg_results) {
+        if (error) throw error;
+        let ctg_list =tpl.ctg_list(ctg_results);
+        res.send(tpl.template(ctg_list, '', '', content));
+    })
+})
+
+app.post('/ctg_creating', function(req,res){
+    let new_category=req.body.new_category;
+    cn.query(`insert into ctg (category) values ("${new_category}")`,function (err){
+        if (err) throw err;
+        cn.query(`select last_insert_id() as ctg_id from ctg`,function (err, results) {
+            if (err) throw err;
+            cn.query('select * from ctg', 
+            function (error, ctg_results) {
+                let button = tpl.button(req);
+                if (error) throw error;
+                let ctg_list =tpl.ctg_list(ctg_results);
+                res.send(tpl.template(ctg_list, '', button, ''));
+            })
+        });
+    });
+})
+
+
 app.listen(7000);
 
 
@@ -183,46 +221,6 @@ app.listen(7000);
 
 // NodeJS + mySQL
 
-// let server =http.createServer(function (req, res) {
-//     let pathname =url.parse(req.url, true).pathname;
-//     let queryData = url.parse(req.url, true).query;
-
-//     if (req.url === '/favicon.ico') {
-//         res.writeHead(200, {'Content-Type': 'image/x-icon'} );
-//         return res.end();
-//     } 
-
-    
-//     //button
-//     let button= tpl.button(pathname,queryData);
-    
-    
-//     //ctg table
-    
-//     cn.query('select * from ctg', 
-//     function (error, results) {
-//         if (error) throw error;
-//         let ctg_list ='';
-//         if (results){
-//             for (let i=0; i<results.length; i++){
-//                 ctg_list = ctg_list + `<ul><li><a href="/ctg${results[i].id
-//                 }">${results[i].category}</a></li></ul>`;
-//             }
-//         }
-    
-    
-        
-    
-//         //date
-//         let date = '';
-//         if (pathname !=="/"){
-//             cn.query(`select id, ctg_id, date_format(total.date, "%y-%m-%d") as date, content from total where ctg_id=?`, [`${parseInt(pathname.substring(4))}`],
-//             function (error, results) {
-//                 if (error) throw error;
-//                 for (let i=0; i<results.length; i++){
-//                     date=date + `<ul><li><a href="/ctg${results[i].ctg_id}/?id=${results[i].id}">${results[i].date}</a></li></ul>`
-//                 }
-            
 //             //content
 
 //             function normalRes (ctg_list, date, button, content){
