@@ -27,14 +27,12 @@ app.get('/', function (req, res) {
     function (error, ctg_results) {
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
-        res.send(tpl.template(ctg_list, '',button, ''));
+        res.send(tpl.template(ctg_list, '',button, 'Hello!'));
     });
 });
 app.get('/ctg/:ctg_id', function (req,res){
     
     let button = tpl.button(req);
-    console.log(button);
-    console.log(req.params.ctg_id);
     cn.query('select * from ctg', 
     function (error, ctg_results) {
         if (error) throw error;
@@ -43,11 +41,29 @@ app.get('/ctg/:ctg_id', function (req,res){
             function (error, total_result) {
                 if (error) throw error;
                 let date_list=tpl.date(total_result);
-                console.log(date_list);
-                res.send(tpl.template(ctg_list, date_list,button,''));
+                res.send(tpl.template(ctg_list, date_list, button,''));
         })
     })
 });
+
+app.get('/ctg/:ctg_id/content/:content_id',function(req,res){
+    let button = tpl.button(req);
+    cn.query('select * from ctg', 
+    function (error, ctg_results) {
+        if (error) throw error;
+        let ctg_list =tpl.ctg_list(ctg_results);
+        cn.query(`select id, ctg_id, date_format(total.date, "%y-%m-%d") as date, content from total where ctg_id=?`, [`${parseInt(req.params.ctg_id)}`],
+            function (error, total_result) {
+                if (error) throw error;
+                let date_list=tpl.date(total_result);
+                cn.query(`select id, content from total where total.id=?`,[`${parseInt(req.params.content_id)}`],function (error, results) {
+                    if (error) throw error;
+                    content=results[0].content;
+                    res.send(tpl.template(ctg_list, date_list, button, content));
+                });
+        })
+    })
+})
 
 
 app.listen(7000);
