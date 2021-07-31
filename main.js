@@ -6,13 +6,15 @@ const sanitizeHtml = require('sanitize-html');
 const tpl = require('./lib/template');
 const cn=require('./lib/mysql');
 
+//Express
 const express = require('express');
 const bodyParser = require('body-parser');
+const compression = require('compression')
 
 const app = express()
 
 app.use(bodyParser.urlencoded({ extended: false }))
-
+app.use(compression());
 
 
 
