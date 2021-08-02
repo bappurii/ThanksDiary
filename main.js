@@ -48,23 +48,44 @@ app.use(session({
 
 
 
-
 app.get('/favicon.ico', function (req, res) {
     res.writeHead(200, {'Content-Type': 'image/x-icon'} );
     return res.end();
 })
 app.get('/', function (req, res) {
-    
     cn.query('select * from ctg', 
     function (error, ctg_results) {
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
-        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', '', 'Hello!'));
+        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', 'Hello!'));
     });
 });
 
 app.use('/ctg', ctg);
-    
+
+app.post('/log-in', function (req, res){
+    let content = `
+        <form action="/login_process" method="post">
+            <p><input type="text" name="user_id" placeholder="email"></p>
+            <p><input type="password" name="user_password" placeholder="password"></p>
+            <input type="submit">
+            <a href="/sign-up">sign-up</a>
+        </form>
+    `
+    res.send(tpl.login_template(content));
+})
+
+app.get('/login_process', function (req, res){
+    let content = `
+        <form action="/login_process" method="post">
+            <p><input type="text" name="user_id" placeholder="email"></p>
+            <p><input type="password" name="user_password" placeholder="password"></p>
+            <input type="submit">
+            <a href="/sign-up">sign-up</a>
+        </form>
+    `
+    res.send(tpl.login_template(content));
+})
 
 
 app.listen(7000);

@@ -65,7 +65,7 @@ router.get('/:ctg_id/ctg_update',function(req, res){
         function (error, ctg_results) {
             if (error) throw error;
             let ctg_list =tpl.ctg_list(ctg_results);
-            res.end(tpl.template(ctg_list, '', '', '', content));
+            res.send(tpl.template(ctg_list, '', '', '', content));
         })
     })
 })
