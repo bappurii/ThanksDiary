@@ -59,15 +59,18 @@ app.get('/', function (req, res) {
         let ctg_list =tpl.ctg_list(ctg_results);
         res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', 'Hello!'));
     });
+    console.log(req.session.loginStatus);
 });
 
 app.use('/ctg', ctg);
 
-app.post('/log-in', function (req, res){
+
+
+app.get('/auth/login', function (req, res){
     let content = `
-        <form action="/login_process" method="post">
+        <form action="/auth/login_process" method="post">
             <p><input type="text" name="user_id" placeholder="email"></p>
-            <p><input type="password" name="user_password" placeholder="password"></p>
+            <p><input type="password" name="user_pwd" placeholder="password"></p>
             <input type="submit">
             <a href="/sign-up">sign-up</a>
         </form>
@@ -75,17 +78,25 @@ app.post('/log-in', function (req, res){
     res.send(tpl.login_template(content));
 })
 
-app.get('/login_process', function (req, res){
-    let content = `
-        <form action="/login_process" method="post">
-            <p><input type="text" name="user_id" placeholder="email"></p>
-            <p><input type="password" name="user_password" placeholder="password"></p>
-            <input type="submit">
-            <a href="/sign-up">sign-up</a>
-        </form>
-    `
-    res.send(tpl.login_template(content));
+app.post('/auth/login_process', function (req, res){
+    let user_id = req.body.user_id;
+    let user_pwd = req.body.user_pwd;
+    cn.query('select * from user where user.user_id=?',[user_id], function (err,results){
+        if (err) throw err;
+        
+        if (results[0] && results[0].user_id == user_id && results[0].user_password ==user_pwd){
+            req.session.loginStatus = true;
+            req.session.save(function(){
+                res.redirect(`/`);});
+        } else {
+            res.send(tpl.login_template('Please Sign Up!'));
+        }
+        console.log(req.session.loginStatus);
+        
+    })
+    
 })
+
 
 
 app.listen(7000);

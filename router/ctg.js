@@ -27,7 +27,7 @@ router.get('/ctg_create', function(req,res){
     function (error, ctg_results) {
         if (error) throw error;
         let ctg_list =tpl.ctg_list(ctg_results);
-        res.send(tpl.template(ctg_list, '', '', '', content));
+        res.send(tpl.template(ctg_list, '', '', '', content, req.session.loginStatus));
     })
 })
 
@@ -42,7 +42,7 @@ router.post('/ctg_creating', function(req,res){
                 let button = tpl.button(req);
                 if (error) throw error;
                 let ctg_list =tpl.ctg_list(ctg_results);
-                res.send(tpl.template(ctg_list, '', '', button, ''));
+                res.send(tpl.template(ctg_list, '', '', button, '',req.session.loginStatus));
             })
         });
     });
@@ -65,7 +65,7 @@ router.get('/:ctg_id/ctg_update',function(req, res){
         function (error, ctg_results) {
             if (error) throw error;
             let ctg_list =tpl.ctg_list(ctg_results);
-            res.send(tpl.template(ctg_list, '', '', '', content));
+            res.send(tpl.template(ctg_list, '', '', '', content, req.session.loginStatus));
         })
     })
 })
@@ -110,7 +110,7 @@ router.get('/:ctg_id', function (req,res){
             function (error, total_result) {
                 if (error) throw error;
                 let date_list=tpl.date(total_result);
-                res.send(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button,''));
+                res.send(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button,'',req.session.loginStatus));
         })
     })
 });
@@ -128,7 +128,7 @@ router.get('/:ctg_id/content/:content_id',function(req,res){
                 cn.query(`select id, content from total where total.id=?`,[`${parseInt(req.params.content_id)}`],function (error, results) {
                     if (error) throw error;
                     content=results[0].content;
-                    res.send(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button, content));
+                    res.send(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button, content, req.session.loginStatus));
                 });
         })
     })
@@ -149,7 +149,7 @@ router.get('/:ctg_id/cont_create',function(req,res){
             <input type="submit" >
         </form>
         `;
-        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', content));
+        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', content, req.session.loginStatus));
     });
 });
 
@@ -175,7 +175,7 @@ router.post('/:ctg_id/cont_creating',function(req,res){
     });
 
     //create
-    cn.query(`insert into total (ctg_id, date, content) values (${parseInt(req.params.ctg_id)}, "${new_date}", "${new_content}")`,function (err){
+    cn.query(`insert into total (ctg_id, date, content, req.session.loginStatus) values (${parseInt(req.params.ctg_id)}, "${new_date}", "${new_content}")`,function (err){
         if (err) throw err;
         cn.query(`select last_insert_id() as id from total`,function (err, results) {
             if (err) throw err;
@@ -201,7 +201,7 @@ router.get('/:ctg_id/content/:content_id/cont_update',function(req, res){
             <input type="submit" value="submit">
         </form>
         `;
-        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', content));
+        res.send(tpl.template(ctg_list, tpl.ctg_UD(req), '', '', content, req.session.loginStatus));
         })
     })
 })
@@ -238,7 +238,7 @@ router.post('/:ctg_id/content/:content_id/cont_updating',function(req, res){
         function (error, total_result) {
             if (error) throw error;
             let date_list=tpl.date(total_result);
-            res.end(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button, clean_content));
+            res.end(tpl.template(ctg_list, tpl.ctg_UD(req), date_list, button, clean_content, req.session.loginStatus));
         });
     });
 })
